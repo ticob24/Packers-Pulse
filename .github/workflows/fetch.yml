@@ -1,0 +1,55 @@
+name: Fetch and Publish
+
+on:
+  # Manual run button in the Actions UI
+  workflow_dispatch:
+
+  # Run every hour (UTC)
+  schedule:
+    - cron: "0 * * * *"
+
+  # Also run after you upload/commit relevant files
+  push:
+    branches: [ main ]
+    paths:
+      - "index.js"
+      - "package.json"
+      - ".github/workflows/fetch.yml"
+      - "docs/**"
+
+permissions:
+  contents: write
+
+# Avoid overlapping jobs if you click Run several times
+concurrency:
+  group: fetch-and-publish
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install deps
+        run: npm install
+
+      - name: Run fetch script
+        run: node index.js
+
+      - name: Commit updated data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/data.json docs/digest.html docs/scores.json || true
+          git stash
+          git pull --rebase origin main
+          git stash pop || true
+          git commit -m "Update data & scores [skip ci]" || echo "No changes"
+          git push
