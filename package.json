@@ -1,8 +1,9 @@
 {
   "name": "packers-pulse",
   "version": "1.0.0",
-  "private": true,
+  "main": "index.js",
+  "type": "module",
   "dependencies": {
-    "rss-parser": "^3.13.0"
+    "rss-parser": "^3.12.0"
   }
 }
