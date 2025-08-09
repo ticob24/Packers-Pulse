@@ -33,3 +33,4 @@ jobs:
           git add docs/data.json docs/digest.html
           git commit -m "Update data [skip ci]" || echo "No changes"
           git push
+
