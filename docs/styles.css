@@ -1,0 +1,15 @@
+
+:root { --bg:#0e1411; --card:#132a21; --text:#f2f6f4; --muted:#b9c8c1; --accent:#b39b00; }
+*{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+header{padding:20px 16px 8px} h1{margin:0;font-size:28px} .sub{margin:6px 0 0;color:var(--muted)}
+main{padding:8px 16px 80px;max-width:880px;margin:auto}
+.card{background:var(--card);border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 2px 12px rgba(0,0,0,0.25)}
+.controls{display:flex;gap:8px;margin-bottom:8px}
+input[type=search]{flex:1;padding:10px 12px;border-radius:10px;border:1px solid #244536;background:#0b1e17;color:var(--text)}
+button{padding:10px 14px;border-radius:10px;border:1px solid #244536;background:#184635;color:#fff;cursor:pointer}
+.feed{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+.item{display:grid;gap:6px;padding:12px;border-radius:12px;background:#0b1e17;border:1px solid #1f3a2f}
+.meta{color:var(--muted);font-size:12px}
+.item a{color:#cfe9df;text-decoration:none}
+.badge{background:#1f3a2f;color:#d6ffef;border:1px solid #2c4e40;padding:2px 8px;border-radius:999px;font-size:12px}
+footer{position:fixed;left:0;right:0;bottom:0;padding:10px 16px;background:linear-gradient(180deg,transparent,rgba(0,0,0,0.3));color:var(--muted)}
