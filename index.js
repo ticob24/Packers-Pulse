@@ -1,9 +1,10 @@
-// Packers Pulse fetcher (Node 18+, CommonJS)
+// Packers Pulse fetcher (Node 18+, CommonJS).
+// If all sources return 0 items, we PRESERVE the previous docs/data.json instead of overwriting with empty.
+
 const fs = require('fs');
 const crypto = require('crypto');
 const Parser = require('rss-parser');
 
-// Add UA + timeouts for RSS to avoid some hosts blocking default bots
 const parser = new Parser({
   requestOptions: {
     headers: { 'User-Agent': 'PackersPulse/1.0 (+github-actions)' },
@@ -101,7 +102,7 @@ async function fetchRss(url){
 
 async function fetchReddit(url){
   const data = await fetchJSON(url, {
-    headers: { 'User-Agent': 'PackersPulse/1.0 (github-actions)' },
+    headers: { 'User-Agent': 'PackersPulse/1.0 (github actions)' },
     timeoutMs: 12000
   });
   return (data?.data?.children||[]).map(c=>c.data).map(d=>({
@@ -127,7 +128,6 @@ function normalize(items){
     seen.add(key);
     out.push(it);
   }
-  // recency boost (last 24h)
   for (const it of out){
     const age = NOW - new Date(it.created_at);
     const recency = Math.max(0, 1 - age/DAY_MS);
@@ -157,7 +157,6 @@ async function main(){
   let items = [];
   let b=0,rss=0,rd=0;
 
-  // Bluesky (pace calls)
   for (const q of QUERIES){
     try{
       const chunk = await fetchBluesky(q, 15);
@@ -167,7 +166,6 @@ async function main(){
     }catch(e){ console.log('Bluesky error:', e?.message||e); }
   }
 
-  // RSS
   for (const url of RSS_FEEDS){
     try{
       const chunk = await fetchRss(url);
@@ -176,7 +174,6 @@ async function main(){
     }catch(e){ console.log('RSS error:', e?.message||e); }
   }
 
-  // Reddit
   for (const url of REDDIT_FEEDS){
     try{
       const chunk = await fetchReddit(url);
@@ -189,7 +186,6 @@ async function main(){
 
   const merged = normalize(items);
 
-  // Safety net: if everything came back empty, keep previous data.json
   if (merged.length === 0){
     const prev = readPrevious();
     if (prev && Array.isArray(prev.items) && prev.items.length){
