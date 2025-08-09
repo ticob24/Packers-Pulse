@@ -1,5 +1,5 @@
-// Packers Pulse fetcher (Node 18+, CommonJS) with DEBUG logs + safety net.
-// If all sources return 0, preserves previous docs/data.json.
+// Packers Pulse fetcher (Node 18+, CommonJS) with ESPN scores.
+// Preserves previous data if sources return 0. Writes docs/data.json, docs/digest.html, docs/scores.json.
 
 const fs = require('fs');
 const crypto = require('crypto');
@@ -14,6 +14,8 @@ const parser = new Parser({
 
 const NOW = new Date();
 const DAY_MS = 24 * 3600 * 1000;
+const TEAM_NAME = 'Green Bay Packers';
+const TEAM_ABBR = 'GB'; // ESPN short name
 
 const QUERIES = [
   'Green Bay Packers',
@@ -136,6 +138,47 @@ async function fetchReddit(url){
   return mapped;
 }
 
+// ESPN NFL scoreboard (no key). Filter Packers, last 4 + LIVE.
+async function fetchScores(){
+  try {
+    const scoreboard = await fetchJSON('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard', {
+      headers: { 'User-Agent': 'PackersPulse/1.0 (+github-actions)' },
+      timeoutMs: 15000
+    });
+    const events = Array.isArray(scoreboard?.events) ? scoreboard.events : [];
+    // Flatten competitions
+    let games = [];
+    for (const ev of events) {
+      const comp = (ev.competitions||[])[0];
+      if (!comp) continue;
+      const cTeams = (comp.competitors||[]).map(x => ({
+        name: x?.team?.displayName || '',
+        abbr: x?.team?.abbreviation || '',
+        score: x?.score || '0',
+        homeAway: x?.homeAway
+      }));
+      const isPackers = cTeams.some(t => t.name === 'Green Bay Packers' or t.abbr === 'GB');
+      const status = comp?.status?.type?.state || ev?.status?.type?.state || '';
+      const shortDetail = comp?.status?.type?.shortDetail || '';
+      const date = ev?.date || comp?.date || new Date().toISOString();
+      if (isPackers) {
+        const away = cTeams.find(t => t.homeAway === 'away');
+        const home = cTeams.find(t => t.homeAway === 'home');
+        const label = `${away.abbr} ${away.score} @ ${home.abbr} ${home.score} ${shortDetail? '• '+shortDetail : ''}`.trim();
+        games.push({ label, live: (status === 'in'), date });
+      }
+    }
+    // Sort latest first, keep LIVE on top
+    games.sort((a,b) => (b.live?1:0)-(a.live?1:0) || new Date(b.date)-new Date(a.date));
+    // keep 4 items (prefer LIVE + last 3)
+    if (games.length > 4) games = games.slice(0,4);
+    const out = { updated_at: new Date().toISOString(), games };
+    return out;
+  } catch (e) {
+    return { updated_at: new Date().toISOString(), games: [] };
+  }
+}
+
 function normalize(items){
   const seen = new Set();
   const out = [];
@@ -162,7 +205,7 @@ function buildDigest(items){
   if (!top.length) return '<p>No new items yet. Check back after the next update.</p>';
   const firstTitle = top[0].title || (top[0].text ? top[0].text.slice(0,120) : 'multiple developing items');
   const bullets = top.slice(0,8).map(it=>`• ${escapeHtml(it.title || (it.text||'').slice(0,120))} (${it.source})`).join(' ');
-  return `<p>Packers buzz in the last day centers on ${escapeHtml(firstTitle)}.</p><p>Highlights: ${bullets}</p><p>This feed merges Bluesky, Google News, and Reddit and ranks by recency + relevance.</p>`;
+  return `<p>Packers buzz in the last day centers on ${escapeHtml(firstTitle)}.</p><p>Highlights: ${bullets}</p><p>This feed merges Bluesky, News, and Reddit and ranks by recency + relevance.</p>`;
 }
 
 function readPrevious(){
@@ -211,15 +254,22 @@ async function main(){
       console.log(`All sources empty; preserving previous ${prev.items.length} items.`);
       fs.writeFileSync('docs/data.json', JSON.stringify(prev, null, 2));
       fs.writeFileSync('docs/digest.html', buildDigest(prev.items));
-      return;
+    } else {
+      const data = { generated_at: new Date().toISOString(), items: [] };
+      fs.writeFileSync('docs/data.json', JSON.stringify(data, null, 2));
+      fs.writeFileSync('docs/digest.html', buildDigest([]));
     }
+  } else {
+    const data = { generated_at: new Date().toISOString(), items: merged };
+    fs.writeFileSync('docs/data.json', JSON.stringify(data, null, 2));
+    fs.writeFileSync('docs/digest.html', buildDigest(merged));
+    console.log(`Wrote ${merged.length} items at ${data.generated_at}`);
   }
 
-  if (!fs.existsSync('docs')) fs.mkdirSync('docs', { recursive: true });
-  const data = { generated_at: new Date().toISOString(), items: merged };
-  fs.writeFileSync('docs/data.json', JSON.stringify(data, null, 2));
-  fs.writeFileSync('docs/digest.html', buildDigest(merged));
-  console.log(`Wrote ${merged.length} items at ${data.generated_at}`);
+  // Write scores
+  const scores = await fetchScores();
+  fs.writeFileSync('docs/scores.json', JSON.stringify(scores, null, 2));
+  console.log(`Scores: ${scores.games.length} item(s)`);
 }
 
 main().catch(err => { console.error('Fatal:', err); process.exit(1); });
