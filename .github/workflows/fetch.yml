@@ -1,12 +1,12 @@
 name: Fetch and Publish
 
 on:
-  workflow_dispatch:         # lets you run it manually
+  workflow_dispatch:         # run it manually
   schedule:
     - cron: "0 * * * *"      # hourly
 
 permissions:
-  contents: write            # allow committing docs/data.json and docs/digest.html
+  contents: write            # allow committing updated files
 
 jobs:
   build:
