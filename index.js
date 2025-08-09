@@ -1,5 +1,5 @@
-// Packers Pulse fetcher (Node 18+, CommonJS).
-// If all sources return 0 items, we PRESERVE the previous docs/data.json instead of overwriting with empty.
+// Packers Pulse fetcher (Node 18+, CommonJS) with DEBUG logs + safety net.
+// If all sources return 0, preserves previous docs/data.json.
 
 const fs = require('fs');
 const crypto = require('crypto');
@@ -8,7 +8,7 @@ const Parser = require('rss-parser');
 const parser = new Parser({
   requestOptions: {
     headers: { 'User-Agent': 'PackersPulse/1.0 (+github-actions)' },
-    timeout: 15000
+    timeout: 20000
   }
 });
 
@@ -24,10 +24,18 @@ const QUERIES = [
   '#GoPackGo'
 ];
 
-const RSS_FEEDS = [
+const KEYWORD_NEWS_FEEDS = [
   'https://news.google.com/rss/search?q=Green%20Bay%20Packers&hl=en-US&gl=US&ceid=US:en',
-  'https://news.google.com/rss/search?q=Packers%20trade&hl=en-US&gl=US&ceid=US:en',
-  'https://news.google.com/rss/search?q=Jordan%20Love%20Packers&hl=en-US&gl=US&ceid=US:en'
+  'https://news.google.com/rss/search?q=Jordan%20Love%20Packers&hl=en-US&gl=US&ceid=US:en',
+  'https://news.google.com/rss/search?q=Packers%20trade%20OR%20rumor&hl=en-US&gl=US&ceid=US:en',
+  'https://www.bing.com/news/search?q=Green+Bay+Packers&format=rss',
+  'https://www.bing.com/news/search?q=Jordan+Love+Packers&format=rss',
+  'https://news.search.yahoo.com/rss?p=Green+Bay+Packers'
+];
+
+const TEAM_BLOG_FEEDS = [
+  'https://www.acmepackingcompany.com/rss/index.xml',
+  'https://www.packers.com/rss/news'
 ];
 
 const REDDIT_FEEDS = [
@@ -60,7 +68,12 @@ function safeISO(s){
   return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
 }
 
-async function fetchBluesky(query, limit=20){
+function logSample(prefix, arr, pick = 3) {
+  const titles = (arr || []).slice(0, pick).map(x => (x.title || x.text || '').slice(0, 80));
+  console.log(`${prefix} sample:`, titles.length ? titles : '(none)');
+}
+
+async function fetchBluesky(query, limit=15){
   const u = new URL('https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts');
   u.searchParams.set('q', query);
   u.searchParams.set('limit', String(limit));
@@ -69,7 +82,7 @@ async function fetchBluesky(query, limit=20){
     timeoutMs: 12000
   });
   const posts = Array.isArray(data?.posts) ? data.posts : [];
-  return posts.map(p=>{
+  const mapped = posts.map(p=>{
     const text = p?.record?.text || '';
     const handle = p?.author?.handle || '';
     const postId = (p?.uri||'').split('/').pop() || '';
@@ -84,20 +97,24 @@ async function fetchBluesky(query, limit=20){
       score: 1.0
     };
   });
+  logSample(`Bluesky("${query}")`, mapped);
+  return mapped;
 }
 
 async function fetchRss(url){
   const feed = await parser.parseURL(url);
-  return (feed.items||[]).map(it=>({
-    source: 'GoogleNews',
+  const mapped = (feed.items||[]).map(it=>({
+    source: 'News',
     source_id: it.link || it.guid || hash(it.title||''),
     author: String(it.creator || it.source || ''),
     title: it.title || '',
-    text: it.contentSnippet || '',
+    text: it.contentSnippet || it.content || '',
     url: it.link || '',
     created_at: safeISO(it.isoDate || it.pubDate || NOW.toISOString()),
-    score: 1.2
+    score: 1.25
   }));
+  logSample(`RSS(${url.split('/')[2]})`, mapped);
+  return mapped;
 }
 
 async function fetchReddit(url){
@@ -105,7 +122,7 @@ async function fetchReddit(url){
     headers: { 'User-Agent': 'PackersPulse/1.0 (github actions)' },
     timeoutMs: 12000
   });
-  return (data?.data?.children||[]).map(c=>c.data).map(d=>({
+  const mapped = (data?.data?.children||[]).map(c=>c.data).map(d=>({
     source: 'Reddit',
     source_id: d?.id || hash(d?.title||''),
     author: d?.author || '',
@@ -115,6 +132,8 @@ async function fetchReddit(url){
     created_at: safeISO(d?.created_utc ? new Date(d.created_utc*1000).toISOString() : NOW.toISOString()),
     score: 1.1
   }));
+  logSample('Reddit', mapped);
+  return mapped;
 }
 
 function normalize(items){
@@ -166,7 +185,7 @@ async function main(){
     }catch(e){ console.log('Bluesky error:', e?.message||e); }
   }
 
-  for (const url of RSS_FEEDS){
+  for (const url of KEYWORD_NEWS_FEEDS.concat(TEAM_BLOG_FEEDS)){
     try{
       const chunk = await fetchRss(url);
       rss += chunk.length;
