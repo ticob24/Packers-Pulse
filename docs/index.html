@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Packers Pulse</title>
+  <meta name="theme-color" content="#203731">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./favicon.ico">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="stylesheet" href="./style.css?v=5">
+  <script defer src="./script.js?v=5"></script>
+</head>
+<body>
+  <header class="top">
+    <img src="./assets/hero.jpg" alt="" class="hero" />
+    <h1>Packers Pulse</h1>
+    <p class="sub">Merged news + social, ranked by recency. Tap an item to expand.</p>
+  </header>
+
+  <section class="card" id="scoresBar">
+    <h2>Packers Scores</h2>
+    <div id="scores" class="scores"></div>
+    <small id="scoresNote" class="muted"></small>
+  </section>
+
+  <main>
+    <section id="digest" class="card">
+      <h2>Daily Digest</h2>
+      <div id="digestContent">Loading digest…</div>
+    </section>
+
+    <section class="card controls">
+      <div class="row">
+        <input id="q" type="search" placeholder="Search (e.g., Jordan Love, trade)">
+        <select id="sourceFilter">
+          <option value="all" selected>All sources</option>
+          <option value="News">News</option>
+          <option value="Bluesky">Bluesky</option>
+          <option value="Reddit">Reddit</option>
+        </select>
+        <select id="timeRange">
+          <option value="24" selected>Last 24h</option>
+          <option value="48">Last 48h</option>
+          <option value="7d">Last 7 days</option>
+          <option value="all">All time</option>
+        </select>
+        <button id="clear">Clear</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <ul id="feed" class="feed"></ul>
+      <div id="moreWrap" class="moreWrap"></div>
+    </section>
+  </main>
+
+  <footer>
+    <small class="muted">Updated <span id="updated">—</span>. Add to Home Screen for an app-like experience.</small>
+  </footer>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw-v5.js').catch(()=>{}));
+    }
+  </script>
+</body>
+</html>
