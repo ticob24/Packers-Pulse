@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
-  <meta name="theme-color" content="#0b3d2e">
+  <meta name="theme-color" content="#203731">
   <title>Packers Pulse</title>
   <link rel="stylesheet" href="./styles.css">
   <script defer src="./app.js"></script>
@@ -13,8 +13,14 @@
 <body>
   <header>
     <h1>Packers Pulse</h1>
-    <p class="sub">Merged news + social. Auto-updated hourly.</p>
+    <p class="sub">Merged news + social. Tap items to expand.</p>
   </header>
+
+  <section class="card" id="scoresBar">
+    <h2 style="margin:0 0 8px;color:#203731">Packers Scores</h2>
+    <div id="scores" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+    <small id="scoresNote" style="color:#5c7268"></small>
+  </section>
 
   <main>
     <section id="digest" class="card">
@@ -22,11 +28,32 @@
       <div id="digestContent">Loading...</div>
     </section>
 
-    <section class="card">
-      <div class="controls">
-        <input id="q" type="search" placeholder="Filter posts e.g. 'trade'">
-        <button id="clear">Clear</button>
+    <section class="card controls">
+      <div class="row">
+        <label>Search</label>
+        <input id="q" type="search" placeholder="e.g. trade, Jordan Love">
       </div>
+      <div class="row">
+        <label>Time</label>
+        <select id="timeRange">
+          <option value="48">Last 48h</option>
+          <option value="24" selected>Last 24h</option>
+          <option value="7d">Last 7 days</option>
+          <option value="all">All</option>
+        </select>
+
+        <label>Source</label>
+        <select id="sourceFilter">
+          <option value="all" selected>All</option>
+          <option value="GoogleNews">News</option>
+          <option value="Bluesky">Bluesky</option>
+          <option value="Reddit">Reddit</option>
+        </select>
+      </div>
+      <button id="clear">Clear filters</button>
+    </section>
+
+    <section class="card">
       <ul id="feed" class="feed"></ul>
     </section>
   </main>
