@@ -1,16 +1,17 @@
 name: Fetch and Publish
 
 on:
-  workflow_dispatch:         # run it manually
+  workflow_dispatch:           # allow manual runs
   schedule:
-    - cron: "0 * * * *"      # hourly
+    - cron: "0 * * * *"        # run hourly
 
 permissions:
-  contents: write            # allow committing updated files
+  contents: write              # allow committing to the repo
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,7 +31,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main
           git add docs/data.json docs/digest.html
           git commit -m "Update data [skip ci]" || echo "No changes"
           git push
-
