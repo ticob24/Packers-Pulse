@@ -1,6 +1,6 @@
-// Service worker
+// Service worker (v4)
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw-v4.js').catch(()=>{}));
 }
 
 const feedEl = document.getElementById('feed');

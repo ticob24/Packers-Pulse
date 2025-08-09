@@ -27,4 +27,4 @@ button{padding:10px 14px;border-radius:10px;border:1px solid #184635;background:
 footer{position:fixed;left:0;right:0;bottom:0;padding:10px 16px;background:linear-gradient(180deg,transparent,rgba(0,0,0,0.05));color:var(--muted)}
 /* collapsible helpers */
 .item .full{display:none;margin-top:6px}
-.item.expanded .full{display:block}
+item.expanded .full{display:block}
