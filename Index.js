@@ -21,7 +21,7 @@ async function fetchScores() {
       }));
 
       // ✅ JS uses || (not "or")
-      const isPackers = cTeams.some(t => t.name === 'Green Bay Packers' || t.abbr === 'GB');
+    const isPackers = cTeams.some(t => t.name === 'Green Bay Packers' || t.abbr === 'GB');
       if (!isPackers) continue;
 
       const status = comp?.status?.type?.state || ev?.status?.type?.state || '';
